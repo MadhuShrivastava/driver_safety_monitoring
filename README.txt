@@ -1,10 +1,11 @@
- Driver Safety Monitoring System
+# Driver Safety Monitoring System
 
+Ever felt your eyes getting heavy on a long drive? This project was built to help with exactly that — a real-time system that watches for drowsiness and seatbelt violations so drivers stay safe on the road.
 Real-time AI-based system for detecting driver drowsiness and seatbelt usage using computer vision.
 
 ---
 
-📌 Overview
+## 📌 Overview
 
 A real-time driver safety system that detects:
 
@@ -19,27 +20,30 @@ Using:
 
 ---
 
-🎯 Features
+## 🎯 Features
 
 - ✅ Real-time webcam monitoring
-- ✅ YOLO-based seatbelt detection ("best.pt")
+- ✅ YOLO-based seatbelt detection (`best.pt`)
 - ✅ EAR-based drowsiness detection
-- ✅ Threaded beep alert system (non-blocking)
+- ✅ Threaded alarm system using `pygame` (non-blocking, loops until eyes open)
+- ✅ Browser audio fallback for Streamlit Cloud deployment
 - ✅ Clean and interactive Streamlit UI
 
 ---
 
-🧠 System Architecture
+## 🧠 System Architecture
 
+```
 Webcam → WebRTC → Frame Processing
         → YOLO (Seatbelt Detection)
         → MediaPipe (Drowsiness Detection)
         → Decision Engine
-        → Alert System → UI Output
+        → Alert System (pygame / browser audio) → UI Output
+```
 
 ---
 
-⚙️ Tech Stack
+## ⚙️ Tech Stack
 
 - Python
 - Streamlit
@@ -48,49 +52,54 @@ Webcam → WebRTC → Frame Processing
 - OpenCV
 - MediaPipe
 - NumPy
+- pygame
 
 ---
 
-📂 Project Structure
+## 📂 Project Structure
 
+```
 driver_safety_monitoring/
 │── app.py
 │── seat_belt.py
 │── drowsy_detection.py
 │── best.pt
+│── alarm.mp3
 │── requirements.txt
 │── README.md
+```
 
 ---
 
-🚀 Installation
+## 🚀 Installation
 
+```bash
 git clone https://github.com/MadhuShrivastava/driver_safety_monitoring.git
 cd driver_safety_monitoring
 pip install -r requirements.txt
+```
 
 ---
 
-▶️ Run
+## ▶️ Run
 
+```bash
 streamlit run app.py
+```
 
-Open in browser:
-http://localhost:8501
+Open in browser: `http://localhost:8501`
 
 ---
 
-🧪 How It Works
+## 🧪 How It Works
 
-🔹 Seatbelt Detection
+### 🔹 Seatbelt Detection
 
 - YOLOv8 model detects:
-  - "seatbelt"
-  - "no_seatbelt"
+  - `seatbelt`
+  - `no_seatbelt`
 
----
-
-🔹 Drowsiness Detection
+### 🔹 Drowsiness Detection
 
 - MediaPipe face landmarks
 - EAR (Eye Aspect Ratio) calculation
@@ -98,32 +107,35 @@ http://localhost:8501
 
 ---
 
-🔊 Alert System
+## 🔊 Alert System
 
 - Thread-based (non-blocking)
+- Loops `alarm.mp3` until the driver opens their eyes
 - Cross-platform:
-  - Windows → "winsound.Beep()"
-  - Others → system beep via subprocess
+  - **Local** → `pygame` plays `alarm.mp3` through system speakers
+  - **Streamlit Cloud** → browser-side `<audio>` fallback (no server speakers needed)
 
 ---
 
-📊 Dataset
+## 📊 Dataset
 
 This project uses a seatbelt detection dataset from Roboflow Universe:
 
-🔗 https://universe.roboflow.com/madhus-workspace-bbugf/seatbelt-detection-lb1ec-ciwse/dataset/1
+🔗 [Seatbelt Detection Dataset](https://universe.roboflow.com/madhus-workspace-bbugf/seatbelt-detection-lb1ec-ciwse/dataset/1)
 
-Details:
+| Split      | Images |
+|------------|--------|
+| Train      | 2442   |
+| Validation | 698    |
+| Test       | 349    |
 
-- Classes: "seatbelt", "no_seatbelt"
+- Classes: `seatbelt`, `no_seatbelt`
 - Type: Object Detection
-- Split: 2442 train / 698 validation / 349 test
-
-The dataset includes annotated images under diverse real-world conditions, enabling robust model training.
+- Diverse real-world conditions for robust training
 
 ---
 
-⚠️ Limitations
+## ⚠️ Limitations
 
 - Performance depends on lighting conditions
 - Webcam quality affects accuracy
@@ -131,7 +143,7 @@ The dataset includes annotated images under diverse real-world conditions, enabl
 
 ---
 
-📈 Future Scope
+## 📈 Future Scope
 
 - Mobile usage detection
 - Performance optimization
@@ -140,16 +152,16 @@ The dataset includes annotated images under diverse real-world conditions, enabl
 
 ---
 
-🤝 Contributing
+## 🤝 Contributing
 
 Pull requests are welcome.
 
 ---
 
-⭐ Show your support
+## ⭐ Show Your Support
 
 If you like this project, consider giving it a ⭐ on GitHub!
 
 ---
 
-«This project demonstrates a real-time safety monitoring pipeline combining deep learning and computer vision for practical applications.»
+> This project demonstrates a real-time safety monitoring pipeline combining deep learning and computer vision for practical applications.

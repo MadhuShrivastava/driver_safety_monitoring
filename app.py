@@ -1,8 +1,11 @@
 import av
 import cv2
 import time
+import base64
 import threading
+from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 from drowsy_detection import VideoFrameHandler
 from seat_belt import detect_seatbelt
@@ -104,6 +107,13 @@ section[data-testid="stSidebar"] .block-container { padding-top: 1.5rem; }
 }
 
 #MainMenu, footer, header { visibility: hidden; }
+
+/* Remove extra top padding */
+.block-container { padding-top: 1rem !important; }
+
+/* Fix video widget vertical position */
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlock"] { gap: 0rem; }
+iframe { display: block; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -124,6 +134,25 @@ _lock = threading.Lock()
 
 # Alert sound
 
+# Check if pygame is available (works locally, not on Streamlit Cloud)
+try:
+    import pygame
+    pygame.mixer.init()
+    _pygame_available = True
+except Exception:
+    _pygame_available = False
+
+@st.cache_data(show_spinner=False)
+def _load_alarm_b64() -> str:
+    """Fallback: load alarm as base64 for browser playback on Streamlit Cloud."""
+    for fname in ("alarm.mp3", "alarm.wav"):
+        p = Path(__file__).parent / fname
+        if p.exists():
+            mime = "audio/mpeg" if fname.endswith(".mp3") else "audio/wav"
+            data = base64.b64encode(p.read_bytes()).decode()
+            return f"data:{mime};base64,{data}"
+    return ""
+
 _alert_thread_active = False
 _alert_thread_lock = threading.Lock()
 
@@ -131,24 +160,18 @@ _alert_thread_lock = threading.Lock()
 def _alert_worker():
     global _alert_thread_active
     try:
-        import platform
-        system = platform.system()
-        for _ in range(4):
-            if system == "Windows":
-                import winsound
-                winsound.Beep(1000, 250)
-            else:
-                try:
-                    import subprocess
-                    subprocess.run(
-                        ["play", "-n", "synth", "0.25", "sine", "880"],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL,
-                        timeout=1,
-                    )
-                except Exception:
-                    pass
-            time.sleep(0.1)
+        if _pygame_available:
+            pygame.mixer.music.load("alarm.mp3")
+            pygame.mixer.music.play(-1)  # -1 = loop indefinitely
+            while _alert_thread_active:
+                time.sleep(0.1)
+            pygame.mixer.music.stop()
+        else:
+            # On Streamlit Cloud: just keep flag alive; browser audio handles it
+            while _alert_thread_active:
+                time.sleep(0.1)
+    except Exception as e:
+        print(f"Audio error: {e}")
     finally:
         with _alert_thread_lock:
             _alert_thread_active = False
@@ -161,6 +184,12 @@ def trigger_alert_sound():
             _alert_thread_active = True
             t = threading.Thread(target=_alert_worker, daemon=True)
             t.start()
+
+
+def stop_alert_sound():
+    global _alert_thread_active
+    with _alert_thread_lock:
+        _alert_thread_active = False
 
 
 # VideoProcessor
@@ -188,6 +217,8 @@ class VideoProcessor:
         if alert_active and (now - self._last_alert_time) > self._alert_cooldown:
             self._last_alert_time = now
             trigger_alert_sound()
+        elif not alert_active:
+            stop_alert_sound()
 
         with _lock:
             _shared["alert_active"] = alert_active
@@ -248,6 +279,15 @@ with col_status:
 
     with _lock:
         alert_active = _shared["alert_active"]
+
+    # Browser audio fallback for Streamlit Cloud (pygame not available)
+    if not _pygame_available and alert_active:
+        alarm_b64 = _load_alarm_b64()
+        if alarm_b64:
+            components.html(
+                f'<audio autoplay loop><source src="{alarm_b64}"></audio>',
+                height=0,
+            )
 
     if alert_active:
         st.markdown("""

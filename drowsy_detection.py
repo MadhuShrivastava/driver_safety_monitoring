@@ -2,7 +2,6 @@ import cv2
 import time
 import numpy as np
 import mediapipe as mp
-import winsound
 import threading
 from seat_belt import detect_seatbelt
 
@@ -200,8 +199,13 @@ class VideoFrameHandler:
         return frame, self.state_tracker["play_alarm"]
 
 def play_alarm_sound():
-    for _ in range(3):  # Play the alarm sound 3 times    
-        winsound.Beep(1000, 300)  # Frequency: 1000 Hz, Duration: 500 ms
+    try:
+        import pygame
+        pygame.mixer.init()
+        pygame.mixer.music.load("alarm.mp3")
+        pygame.mixer.music.play()
+    except Exception:
+        print("\a")
 
 if __name__ == "__main__":
 
